@@ -123,27 +123,45 @@ is_suv(X).
     session.consult(knowledge);
 
     const carAnimations = {
-  tesla: '<img src="https://media.tenor.com/9v7XoyCQdhUAAAAC/tesla-electric.gif" class="animal-gif" alt="Tesla GIF" />',
-  lamborghini: '<img src="https://media.tenor.com/j1f_Ct0fw98AAAAC/lamborghini-car.gif" class="animal-gif" alt="Lamborghini GIF" />',
-  jeep: '<img src="https://media.tenor.com/F5TxNbmoh7kAAAAC/jeep-wrangler.gif" class="animal-gif" alt="Jeep GIF" />',
-  bmw_m3: '<img src="https://media.tenor.com/7oCGyOCiUGMAAAAC/bmw-car.gif" class="animal-gif" alt="BMW GIF" />',
-  nissan_leaf: '<img src="https://media.tenor.com/3b5AjgP7puwAAAAC/electric-car-ev.gif" class="animal-gif" alt="Nissan Leaf GIF" />'
-};
+      tesla: '<img src="https://media.giphy.com/media/3ohs7KViF7RGg9o0Ba/giphy.gif" class="animal-gif" alt="Tesla GIF" />',
+      lamborghini: '<img src="https://media.giphy.com/media/26xBPXLdPHRZ9aKZq/giphy.gif" class="animal-gif" alt="Lamborghini GIF" />',
+      jeep: '<img src="https://media.giphy.com/media/l3q2YoGcb5RwGGlTW/giphy.gif" class="animal-gif" alt="Jeep GIF" />',
+      bmw_m3: '<img src="https://media.giphy.com/media/l4FGGafcOHmrlQxG4/giphy.gif" class="animal-gif" alt="BMW GIF" />',
+      nissan_leaf: '<img src="https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif" class="animal-gif" alt="Nissan Leaf GIF" />'
+    };
 
     function runProlog() {
-      const input = document.getElementById("prolog-input").value;
+      const input = document.getElementById("prolog-input").value.trim();
       const resultDiv = document.getElementById("result");
       const animDiv = document.getElementById("animal-animation");
 
       resultDiv.innerHTML = "";
       animDiv.innerHTML = "";
 
-      session.query(input);
-      session.answers(answer => {
+      if (!input) {
+        resultDiv.innerHTML = "<p>Моля, въведете Prolog заявка.</p>";
+        return;
+      }
+
+      try {
+        session.query(input);
+      } catch (e) {
+        resultDiv.innerHTML = `<p style="color:red;">Грешка в заявката: ${e.message}</p>`;
+        return;
+      }
+
+      let answered = false;
+
+      function callback(answer) {
         if(answer === false) {
-          resultDiv.innerHTML += `<p>Няма повече резултати.</p>`;
+          if (!answered) {
+            resultDiv.innerHTML = "<p>Няма резултати за тази заявка.</p>";
+          } else {
+            resultDiv.innerHTML += `<p>Няма повече резултати.</p>`;
+          }
           return;
         }
+        answered = true;
         const str = pl.format_answer(answer);
         if (str === "false.") {
           resultDiv.innerHTML = "<p>Няма резултати за тази заявка.</p>";
@@ -160,9 +178,12 @@ is_suv(X).
             animDiv.innerHTML = "<p>Няма GIF за тази кола.</p>";
           }
         }
-      });
+      }
+
+      session.answers(callback);
     }
   </script>
 
 </body>
 </html>
+
