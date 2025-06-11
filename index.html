@@ -48,6 +48,7 @@
       min-height: 30px;
       font-weight: bold;
       color: #004a99;
+      white-space: pre-line;
     }
     .animal-container {
       margin-top: 30px;
@@ -79,8 +80,7 @@
     <code>is_suv(X).</code>
   </p>
 
-  <textarea id="prolog-input">
-% Примерни заявки:
+  <textarea id="prolog-input" spellcheck="false">
 is_fast(X).
 is_electric(X).
 is_sportscar(X).
@@ -91,7 +91,8 @@ is_suv(X).
   <div id="result"></div>
   <div class="animal-container" id="animal-animation"></div>
 
-  <script src="https://unpkg.com/tau-prolog"></script>
+  <script src="https://unpkg.com/tau-prolog/modules/core.js"></script>
+  <script src="https://unpkg.com/tau-prolog/modules/lists.js"></script>
   <script>
     const session = pl.create();
 
@@ -120,6 +121,7 @@ is_suv(X).
       is_fast(X) :- fast(X).
     `;
 
+    // Зареждаме знанията в сесията
     session.consult(knowledge);
 
     const carAnimations = {
@@ -135,41 +137,39 @@ is_suv(X).
       const resultDiv = document.getElementById("result");
       const animDiv = document.getElementById("animal-animation");
 
-      resultDiv.innerHTML = "";
+      resultDiv.textContent = "";
       animDiv.innerHTML = "";
 
       if (!input) {
-        resultDiv.innerHTML = "<p>Моля, въведете Prolog заявка.</p>";
+        resultDiv.textContent = "Моля, въведете Prolog заявка.";
         return;
       }
 
       try {
         session.query(input);
-      } catch (e) {
-        resultDiv.innerHTML = `<p style="color:red;">Грешка в заявката: ${e.message}</p>`;
+      } catch (err) {
+        resultDiv.textContent = "Грешка в заявката: " + err.message;
         return;
       }
 
-      let answered = false;
-
+      // Взимаме отговорите последователно асинхронно
+      let hasAnswer = false;
       function callback(answer) {
-        if(answer === false) {
-          if (!answered) {
-            resultDiv.innerHTML = "<p>Няма резултати за тази заявка.</p>";
+        if (answer === false) {
+          if (!hasAnswer) {
+            resultDiv.textContent = "Няма резултати за тази заявка.";
           } else {
-            resultDiv.innerHTML += `<p>Няма повече резултати.</p>`;
+            resultDiv.textContent += "\nНяма повече резултати.";
           }
           return;
         }
-        answered = true;
-        const str = pl.format_answer(answer);
-        if (str === "false.") {
-          resultDiv.innerHTML = "<p>Няма резултати за тази заявка.</p>";
-          return;
-        }
-        resultDiv.innerHTML += `<p>${str}</p>`;
 
-        const match = str.match(/X = (\w+)/);
+        hasAnswer = true;
+        const formatted = pl.format_answer(answer);
+        resultDiv.textContent += formatted + "\n";
+
+        // Вземаме стойността на X от отговора (ако има)
+        const match = formatted.match(/X = (\w+)/);
         if (match) {
           const car = match[1];
           if (carAnimations[car]) {
@@ -178,12 +178,14 @@ is_suv(X).
             animDiv.innerHTML = "<p>Няма GIF за тази кола.</p>";
           }
         }
+
+        // Вземаме следващия отговор
+        session.answer(callback);
       }
 
-      session.answers(callback);
+      // Започваме да взимаме отговори
+      session.answer(callback);
     }
   </script>
-
 </body>
 </html>
-
