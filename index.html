@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Prolog коли с различни правила и GIF</title>
+  <title>Prolog коли с GIF</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -68,34 +68,26 @@
   </style>
 </head>
 <body>
-  <h1>Prolog коли с различни правила и GIF</h1>
+  <h1>Prolog коли с GIF</h1>
 
-  <p class="instructions">
-    Въведете Prolog заявка и вижте коя кола ще се покаже с анимация.  
-    <br><br>
-    <strong>Примери:</strong><br>
-    <code>is_fast(X).</code><br>
-    <code>is_electric(X).</code><br>
-    <code>is_sportscar(X).</code><br>
-    <code>is_suv(X).</code>
+  <p>Въведете Prolog заявка, например:<br>
+  <code>is_fast(X).</code>, <code>is_electric(X).</code>, <code>is_sportscar(X).</code>, <code>is_suv(X).</code>
   </p>
 
-  <textarea id="prolog-input" spellcheck="false">
-is_fast(X).
-is_electric(X).
-is_sportscar(X).
-is_suv(X).
-  </textarea><br />
+  <textarea id="prolog-input" spellcheck="false">is_fast(X).</textarea><br />
   <button onclick="runProlog()">Изпълни</button>
 
   <div id="result"></div>
   <div class="animal-container" id="animal-animation"></div>
 
-  <script src="https://unpkg.com/tau-prolog/modules/core.js"></script>
-  <script src="https://unpkg.com/tau-prolog/modules/lists.js"></script>
+  <!-- Включваме core и lists модули на tau-prolog -->
+  <script src="https://cdn.jsdelivr.net/npm/tau-prolog@0.3.2/modules/core.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tau-prolog@0.3.2/modules/lists.js"></script>
   <script>
+    // Създаваме сесия
     const session = pl.create();
 
+    // Зареждаме знания
     const knowledge = `
       car(tesla).
       car(lamborghini).
@@ -121,9 +113,10 @@ is_suv(X).
       is_fast(X) :- fast(X).
     `;
 
-    // Зареждаме знанията в сесията
+    // Консултираме знанието (зареждаме)
     session.consult(knowledge);
 
+    // GIF линкове към коли
     const carAnimations = {
       tesla: '<img src="https://media.giphy.com/media/3ohs7KViF7RGg9o0Ba/giphy.gif" class="animal-gif" alt="Tesla GIF" />',
       lamborghini: '<img src="https://media.giphy.com/media/26xBPXLdPHRZ9aKZq/giphy.gif" class="animal-gif" alt="Lamborghini GIF" />',
@@ -152,40 +145,42 @@ is_suv(X).
         return;
       }
 
-      // Взимаме отговорите последователно асинхронно
       let hasAnswer = false;
-      function callback(answer) {
-        if (answer === false) {
-          if (!hasAnswer) {
-            resultDiv.textContent = "Няма резултати за тази заявка.";
-          } else {
-            resultDiv.textContent += "\nНяма повече резултати.";
+
+      // Рекурсивна функция за взимане на всички отговори
+      function getAnswer() {
+        session.answer(answer => {
+          if (answer === false) {
+            if (!hasAnswer) {
+              resultDiv.textContent = "Няма резултати за тази заявка.";
+            } else {
+              resultDiv.textContent += "\nНяма повече резултати.";
+            }
+            return;
           }
-          return;
-        }
+          hasAnswer = true;
+          const formatted = pl.format_answer(answer);
+          resultDiv.textContent += formatted + "\n";
 
-        hasAnswer = true;
-        const formatted = pl.format_answer(answer);
-        resultDiv.textContent += formatted + "\n";
-
-        // Вземаме стойността на X от отговора (ако има)
-        const match = formatted.match(/X = (\w+)/);
-        if (match) {
-          const car = match[1];
-          if (carAnimations[car]) {
-            animDiv.innerHTML = carAnimations[car];
-          } else {
-            animDiv.innerHTML = "<p>Няма GIF за тази кола.</p>";
+          // Извличаме стойност на X, ако има
+          const match = formatted.match(/X = (\w+)/);
+          if (match) {
+            const car = match[1];
+            if (carAnimations[car]) {
+              animDiv.innerHTML = carAnimations[car];
+            } else {
+              animDiv.innerHTML = "<p>Няма GIF за тази кола.</p>";
+            }
           }
-        }
 
-        // Вземаме следващия отговор
-        session.answer(callback);
+          // Вземаме следващия отговор
+          getAnswer();
+        });
       }
 
-      // Започваме да взимаме отговори
-      session.answer(callback);
+      getAnswer();
     }
   </script>
 </body>
 </html>
+
